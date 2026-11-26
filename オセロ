@@ -1,0 +1,1612 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width,
+                 initial-scale=1.0,
+                 maximum-scale=1.0,
+                 user-scalable=no,
+                 viewport-fit=cover"
+    >
+
+    <title>オセロ</title>
+
+    <!-- PWA -->
+    <link rel="manifest" href="./manifest.json">
+
+    <meta name="theme-color" content="#087f5b">
+
+    <!-- iPhoneホーム画面用 -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+
+    <meta
+        name="apple-mobile-web-app-status-bar-style"
+        content="black-translucent"
+    >
+
+    <meta
+        name="apple-mobile-web-app-title"
+        content="オセロ"
+    >
+
+    <link
+        rel="apple-touch-icon"
+        href="./icon-192.png"
+    >
+
+
+    <style>
+
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+
+        html {
+            background: #e8f5e9;
+        }
+
+
+        body {
+
+            font-family:
+                -apple-system,
+                BlinkMacSystemFont,
+                "Segoe UI",
+                sans-serif;
+
+            margin: 0;
+
+            background:
+                linear-gradient(
+                    180deg,
+                    #e8f5e9,
+                    #f8fafc
+                );
+
+            color: #1f2937;
+
+            min-height: 100vh;
+
+
+            padding-top:
+                max(
+                    15px,
+                    env(safe-area-inset-top)
+                );
+
+            padding-bottom:
+                max(
+                    20px,
+                    env(safe-area-inset-bottom)
+                );
+
+            padding-left:
+                max(
+                    12px,
+                    env(safe-area-inset-left)
+                );
+
+            padding-right:
+                max(
+                    12px,
+                    env(safe-area-inset-right)
+                );
+        }
+
+
+        .game {
+
+            width: 100%;
+
+            max-width: 600px;
+
+            margin: auto;
+
+        }
+
+
+        /* ============================= */
+        /* タイトル */
+        /* ============================= */
+
+        h1 {
+
+            text-align: center;
+
+            margin:
+                5px
+                0
+                15px;
+
+            font-size: 30px;
+        }
+
+
+        /* ============================= */
+        /* プレイヤー */
+        /* ============================= */
+
+        .players {
+
+            display: grid;
+
+            grid-template-columns:
+                1fr 1fr;
+
+            gap: 8px;
+
+            margin-bottom: 10px;
+
+        }
+
+
+        .player {
+
+            text-align: center;
+
+            padding: 10px 5px;
+
+            border-radius: 12px;
+
+            font-weight: bold;
+
+        }
+
+
+        .player1 {
+
+            background: #111827;
+
+            color: white;
+
+        }
+
+
+        .player2 {
+
+            background: white;
+
+            color: #111827;
+
+            border: 1px solid #d1d5db;
+
+        }
+
+
+        .score {
+
+            display: block;
+
+            font-size: 24px;
+
+            margin-top: 5px;
+
+        }
+
+
+        /* ============================= */
+        /* 現在の手番 */
+        /* ============================= */
+
+        #turn {
+
+            text-align: center;
+
+            padding: 11px;
+
+            margin-bottom: 8px;
+
+            border-radius: 12px;
+
+            background: #dcfce7;
+
+            font-size: 19px;
+
+            font-weight: bold;
+
+            border: 1px solid #86efac;
+
+        }
+
+
+        /* ============================= */
+        /* メッセージ */
+        /* ============================= */
+
+        #message {
+
+            text-align: center;
+
+            min-height: 26px;
+
+            margin-bottom: 8px;
+
+            color: #b45309;
+
+            font-size: 14px;
+
+            font-weight: bold;
+
+        }
+
+
+        /* ============================= */
+        /* 盤面 */
+        /* ============================= */
+
+        #board {
+
+            display: grid;
+
+            grid-template-columns:
+                repeat(8, 1fr);
+
+            width: 100%;
+
+            aspect-ratio: 1 / 1;
+
+            border: 4px solid #064e3b;
+
+            background: #064e3b;
+
+            border-radius: 7px;
+
+            overflow: hidden;
+
+            user-select: none;
+
+            -webkit-user-select: none;
+
+            touch-action: manipulation;
+
+        }
+
+
+        .cell {
+
+            appearance: none;
+
+            -webkit-appearance: none;
+
+            position: relative;
+
+            display: flex;
+
+            align-items: center;
+
+            justify-content: center;
+
+            min-width: 0;
+
+            padding: 8%;
+
+            margin: 0;
+
+            border: 1px solid #0d6247;
+
+            border-radius: 0;
+
+            background: #16835f;
+
+            cursor: pointer;
+
+        }
+
+
+        .cell:focus-visible {
+
+            outline:
+                3px solid #fde047;
+
+            outline-offset: -3px;
+
+        }
+
+
+        .cell:disabled {
+
+            opacity: 1;
+
+            cursor: default;
+
+        }
+
+
+        /* ============================= */
+        /* 石 */
+        /* ============================= */
+
+        .disc {
+
+            width: 93%;
+
+            height: 93%;
+
+            border-radius: 50%;
+
+            pointer-events: none;
+
+            box-shadow:
+                inset 0 2px 3px
+                rgba(255,255,255,0.15),
+
+                0 2px 5px
+                rgba(0,0,0,0.35);
+
+        }
+
+
+        .black {
+
+            background:
+                radial-gradient(
+                    circle at 35% 30%,
+                    #374151,
+                    #030712
+                );
+
+        }
+
+
+        .white {
+
+            background:
+                radial-gradient(
+                    circle at 35% 30%,
+                    #ffffff,
+                    #e5e7eb
+                );
+
+        }
+
+
+        /* ============================= */
+        /* 置ける場所 */
+        /* ============================= */
+
+        .hint {
+
+            width: 25%;
+
+            height: 25%;
+
+            border-radius: 50%;
+
+            background:
+                rgba(
+                    255,
+                    255,
+                    255,
+                    0.5
+                );
+
+            pointer-events: none;
+
+        }
+
+
+        /* ============================= */
+        /* 結果 */
+        /* ============================= */
+
+        #result {
+
+            display: none;
+
+            margin-top: 15px;
+
+            padding: 15px;
+
+            text-align: center;
+
+            border-radius: 12px;
+
+            background: #fef3c7;
+
+            border:
+                2px solid #f59e0b;
+
+        }
+
+
+        #result h2 {
+
+            margin:
+                0
+                0
+                8px;
+
+            font-size: 22px;
+
+        }
+
+
+        #finalScore {
+
+            font-weight: bold;
+
+        }
+
+
+        /* ============================= */
+        /* リセット */
+        /* ============================= */
+
+        #reset {
+
+            display: block;
+
+            width: 100%;
+
+            margin-top: 14px;
+
+            padding: 14px;
+
+            border: 0;
+
+            border-radius: 12px;
+
+            background: #111827;
+
+            color: white;
+
+            font-size: 17px;
+
+            font-weight: bold;
+
+            cursor: pointer;
+
+            touch-action: manipulation;
+
+        }
+
+
+        #reset:active {
+
+            transform:
+                scale(0.98);
+
+        }
+
+
+        /* ============================= */
+        /* 小型iPhone対応 */
+        /* ============================= */
+
+        @media (
+            max-height: 700px
+        ) {
+
+            h1 {
+
+                font-size: 24px;
+
+                margin-bottom: 8px;
+
+            }
+
+
+            .player {
+
+                padding: 6px 4px;
+
+            }
+
+
+            .score {
+
+                font-size: 20px;
+
+            }
+
+
+            #turn {
+
+                padding: 7px;
+
+                font-size: 16px;
+
+            }
+
+        }
+
+    </style>
+
+</head>
+
+
+
+<body>
+
+
+<main class="game">
+
+
+    <h1>オセロ</h1>
+
+
+    <!-- ================================= -->
+    <!-- プレイヤー -->
+    <!-- ================================= -->
+
+    <section class="players">
+
+
+        <div class="player player1">
+
+            ● ユーザー1
+
+            <span class="score">
+
+                <span id="blackScore">
+                    2
+                </span>
+
+            </span>
+
+            黒
+
+        </div>
+
+
+
+        <div class="player player2">
+
+            ○ ユーザー2
+
+            <span class="score">
+
+                <span id="whiteScore">
+                    2
+                </span>
+
+            </span>
+
+            白
+
+        </div>
+
+
+    </section>
+
+
+
+    <!-- ================================= -->
+    <!-- 手番 -->
+    <!-- ================================= -->
+
+    <div
+        id="turn"
+        aria-live="polite"
+    >
+
+        ● ユーザー1（黒）の番
+
+    </div>
+
+
+
+    <!-- ================================= -->
+    <!-- メッセージ -->
+    <!-- ================================= -->
+
+    <div
+        id="message"
+        aria-live="polite"
+    ></div>
+
+
+
+    <!-- ================================= -->
+    <!-- 盤面 -->
+    <!-- ================================= -->
+
+    <div
+        id="board"
+        role="grid"
+        aria-label="オセロ盤"
+    ></div>
+
+
+
+    <!-- ================================= -->
+    <!-- 結果 -->
+    <!-- ================================= -->
+
+    <section
+        id="result"
+        aria-live="assertive"
+    >
+
+        <h2 id="winner"></h2>
+
+        <div id="finalScore"></div>
+
+    </section>
+
+
+
+    <!-- ================================= -->
+    <!-- リセット -->
+    <!-- ================================= -->
+
+    <button
+        id="reset"
+        type="button"
+    >
+
+        最初から
+
+    </button>
+
+
+</main>
+
+
+
+<script>
+
+"use strict";
+
+
+// =========================================
+// HTML要素
+// =========================================
+
+const boardElement =
+    document.getElementById(
+        "board"
+    );
+
+
+const turnElement =
+    document.getElementById(
+        "turn"
+    );
+
+
+const messageElement =
+    document.getElementById(
+        "message"
+    );
+
+
+const blackScoreElement =
+    document.getElementById(
+        "blackScore"
+    );
+
+
+const whiteScoreElement =
+    document.getElementById(
+        "whiteScore"
+    );
+
+
+const resultElement =
+    document.getElementById(
+        "result"
+    );
+
+
+const winnerElement =
+    document.getElementById(
+        "winner"
+    );
+
+
+const finalScoreElement =
+    document.getElementById(
+        "finalScore"
+    );
+
+
+
+// =========================================
+// ゲーム状態
+// =========================================
+
+// 0  = 空
+// 1  = 黒
+// -1 = 白
+
+let board;
+
+let turn;
+
+let gameOver;
+
+let passMessage;
+
+
+
+// =========================================
+// 8方向
+// =========================================
+
+const directions = [
+
+    [-1, -1],
+    [-1,  0],
+    [-1,  1],
+
+    [ 0, -1],
+    [ 0,  1],
+
+    [ 1, -1],
+    [ 1,  0],
+    [ 1,  1]
+
+];
+
+
+
+// =========================================
+// 盤面内か確認
+// =========================================
+
+function inside(
+    row,
+    column
+) {
+
+    return (
+
+        row >= 0 &&
+        row < 8 &&
+
+        column >= 0 &&
+        column < 8
+
+    );
+
+}
+
+
+
+// =========================================
+// ひっくり返せる石を取得
+// =========================================
+
+function getFlips(
+    row,
+    column,
+    player
+) {
+
+
+    // すでに石が存在する
+
+    if (
+        board[row][column] !== 0
+    ) {
+
+        return [];
+
+    }
+
+
+    const allFlips = [];
+
+
+    for (
+        const [dr, dc]
+        of directions
+    ) {
+
+
+        let r =
+            row + dr;
+
+
+        let c =
+            column + dc;
+
+
+        const flips = [];
+
+
+        // 相手の石を探す
+
+        while (
+
+            inside(r, c) &&
+
+            board[r][c]
+                === -player
+
+        ) {
+
+
+            flips.push(
+                [r, c]
+            );
+
+
+            r += dr;
+
+            c += dc;
+
+        }
+
+
+        // 最後が自分の石なら成立
+
+        if (
+
+            flips.length > 0 &&
+
+            inside(r, c) &&
+
+            board[r][c]
+                === player
+
+        ) {
+
+
+            allFlips.push(
+                ...flips
+            );
+
+        }
+
+    }
+
+
+    return allFlips;
+
+}
+
+
+
+// =========================================
+// 合法手
+// =========================================
+
+function getMoves(
+    player
+) {
+
+
+    const moves = [];
+
+
+    for (
+        let row = 0;
+        row < 8;
+        row++
+    ) {
+
+
+        for (
+            let column = 0;
+            column < 8;
+            column++
+        ) {
+
+
+            if (
+
+                getFlips(
+                    row,
+                    column,
+                    player
+                ).length > 0
+
+            ) {
+
+
+                moves.push(
+                    [row, column]
+                );
+
+            }
+
+        }
+
+    }
+
+
+    return moves;
+
+}
+
+
+
+// =========================================
+// 石数
+// =========================================
+
+function countDiscs() {
+
+
+    let black = 0;
+
+    let white = 0;
+
+
+    for (
+        let row = 0;
+        row < 8;
+        row++
+    ) {
+
+
+        for (
+            let column = 0;
+            column < 8;
+            column++
+        ) {
+
+
+            if (
+                board[row][column] === 1
+            ) {
+
+                black++;
+
+            }
+
+
+            else if (
+                board[row][column] === -1
+            ) {
+
+                white++;
+
+            }
+
+        }
+
+    }
+
+
+    return {
+        black,
+        white
+    };
+
+}
+
+
+
+// =========================================
+// 石を置く
+// =========================================
+
+function play(
+    row,
+    column
+) {
+
+
+    // 終了後は操作禁止
+
+    if (gameOver) {
+
+        return;
+
+    }
+
+
+    const flips =
+        getFlips(
+            row,
+            column,
+            turn
+        );
+
+
+    // 合法手ではない
+
+    if (
+        flips.length === 0
+    ) {
+
+        return;
+
+    }
+
+
+    // 石を置く
+
+    board[row][column] =
+        turn;
+
+
+    // 挟んだ石を反転
+
+    for (
+        const [r, c]
+        of flips
+    ) {
+
+
+        board[r][c] =
+            turn;
+
+    }
+
+
+    passMessage = "";
+
+
+    // =====================================
+    // 手番交代
+    // =====================================
+
+    turn =
+        -turn;
+
+
+    const nextMoves =
+        getMoves(turn);
+
+
+    // =====================================
+    // 相手が置けない
+    // =====================================
+
+    if (
+        nextMoves.length === 0
+    ) {
+
+
+        const previousMoves =
+            getMoves(
+                -turn
+            );
+
+
+        // パス
+
+        if (
+            previousMoves.length > 0
+        ) {
+
+
+            if (
+                turn === 1
+            ) {
+
+
+                passMessage =
+                    "ユーザー1（黒）は"
+                    + "置ける場所がないため"
+                    + "パスしました。";
+
+            }
+
+
+            else {
+
+
+                passMessage =
+                    "ユーザー2（白）は"
+                    + "置ける場所がないため"
+                    + "パスしました。";
+
+            }
+
+
+            // 手番を戻す
+
+            turn =
+                -turn;
+
+        }
+
+
+        // 両者とも置けない
+
+        else {
+
+
+            gameOver =
+                true;
+
+        }
+
+    }
+
+
+    render();
+
+}
+
+
+
+// =========================================
+// 結果表示
+// =========================================
+
+function showResult(
+    black,
+    white
+) {
+
+
+    resultElement.style.display =
+        "block";
+
+
+    if (
+        black > white
+    ) {
+
+
+        winnerElement.textContent =
+            "🏆 ユーザー1（黒）の勝利！";
+
+    }
+
+
+    else if (
+        white > black
+    ) {
+
+
+        winnerElement.textContent =
+            "🏆 ユーザー2（白）の勝利！";
+
+    }
+
+
+    else {
+
+
+        winnerElement.textContent =
+            "引き分け！";
+
+    }
+
+
+    finalScoreElement.textContent =
+
+        "最終結果：ユーザー1（黒） "
+        + black
+        + " 対 "
+        + white
+        + " ユーザー2（白）";
+
+}
+
+
+
+// =========================================
+// 画面更新
+// =========================================
+
+function render() {
+
+
+    boardElement.innerHTML =
+        "";
+
+
+    const counts =
+        countDiscs();
+
+
+    blackScoreElement.textContent =
+        counts.black;
+
+
+    whiteScoreElement.textContent =
+        counts.white;
+
+
+
+    messageElement.textContent =
+        passMessage;
+
+
+
+    const moves =
+        gameOver
+
+        ? []
+
+        : getMoves(turn);
+
+
+
+    // =====================================
+    // 64マスを生成
+    // =====================================
+
+    for (
+        let row = 0;
+        row < 8;
+        row++
+    ) {
+
+
+        for (
+            let column = 0;
+            column < 8;
+            column++
+        ) {
+
+
+            const cell =
+                document.createElement(
+                    "button"
+                );
+
+
+            cell.type =
+                "button";
+
+
+            cell.className =
+                "cell";
+
+
+            cell.setAttribute(
+                "role",
+                "gridcell"
+            );
+
+
+            cell.setAttribute(
+                "aria-label",
+                (row + 1)
+                + "行"
+                + (column + 1)
+                + "列"
+            );
+
+
+
+            // 合法手か？
+
+            const canMove =
+                moves.some(
+
+                    ([r, c]) =>
+
+                        r === row &&
+                        c === column
+
+                );
+
+
+
+            // 終了後 or
+            // 置けない場所はボタン禁止
+
+            cell.disabled =
+
+                gameOver ||
+
+                !canMove;
+
+
+
+            // =================================
+            // 黒石
+            // =================================
+
+            if (
+                board[row][column] === 1
+            ) {
+
+
+                const disc =
+                    document.createElement(
+                        "span"
+                    );
+
+
+                disc.className =
+                    "disc black";
+
+
+                cell.appendChild(
+                    disc
+                );
+
+            }
+
+
+            // =================================
+            // 白石
+            // =================================
+
+            else if (
+                board[row][column] === -1
+            ) {
+
+
+                const disc =
+                    document.createElement(
+                        "span"
+                    );
+
+
+                disc.className =
+                    "disc white";
+
+
+                cell.appendChild(
+                    disc
+                );
+
+            }
+
+
+            // =================================
+            // 合法手
+            // =================================
+
+            else if (
+                canMove
+            ) {
+
+
+                const hint =
+                    document.createElement(
+                        "span"
+                    );
+
+
+                hint.className =
+                    "hint";
+
+
+                cell.appendChild(
+                    hint
+                );
+
+            }
+
+
+
+            // =================================
+            // クリック
+            // =================================
+
+            if (
+                canMove &&
+                !gameOver
+            ) {
+
+
+                cell.addEventListener(
+
+                    "click",
+
+                    function () {
+
+
+                        play(
+                            row,
+                            column
+                        );
+
+                    }
+
+                );
+
+            }
+
+
+            boardElement.appendChild(
+                cell
+            );
+
+        }
+
+    }
+
+
+
+    // =====================================
+    // ゲーム終了
+    // =====================================
+
+    if (gameOver) {
+
+
+        turnElement.textContent =
+            "ゲーム終了";
+
+
+        messageElement.textContent =
+            "両方のユーザーが"
+            + "置ける場所がないため"
+            + "終了しました。";
+
+
+        showResult(
+            counts.black,
+            counts.white
+        );
+
+    }
+
+
+    // =====================================
+    // ユーザー1
+    // =====================================
+
+    else if (
+        turn === 1
+    ) {
+
+
+        turnElement.textContent =
+            "● ユーザー1（黒）の番";
+
+    }
+
+
+    // =====================================
+    // ユーザー2
+    // =====================================
+
+    else {
+
+
+        turnElement.textContent =
+            "○ ユーザー2（白）の番";
+
+    }
+
+}
+
+
+
+// =========================================
+// ゲーム初期化
+// =========================================
+
+function init() {
+
+
+    board =
+        Array.from(
+
+            {
+                length: 8
+            },
+
+            () =>
+                Array(8).fill(0)
+
+        );
+
+
+    // 初期配置
+
+    board[3][3] = -1;
+
+    board[3][4] = 1;
+
+    board[4][3] = 1;
+
+    board[4][4] = -1;
+
+
+    // 黒から開始
+
+    turn = 1;
+
+
+    gameOver =
+        false;
+
+
+    passMessage =
+        "";
+
+
+    // 結果リセット
+
+    resultElement.style.display =
+        "none";
+
+
+    winnerElement.textContent =
+        "";
+
+
+    finalScoreElement.textContent =
+        "";
+
+
+    render();
+
+}
+
+
+
+// =========================================
+// リセット
+// =========================================
+
+document
+    .getElementById("reset")
+    .addEventListener(
+
+        "click",
+        init
+
+    );
+
+
+
+// =========================================
+// ゲーム開始
+// =========================================
+
+init();
+
+
+
+// =========================================
+// Service Worker
+// =========================================
+
+if (
+    "serviceWorker"
+    in navigator
+) {
+
+
+    window.addEventListener(
+
+        "load",
+
+        function () {
+
+
+            navigator
+                .serviceWorker
+
+                .register(
+                    "./sw.js"
+                )
+
+                .then(
+                    function () {
+
+
+                        console.log(
+                            "Service Worker登録成功"
+                        );
+
+                    }
+                )
+
+                .catch(
+                    function (error) {
+
+
+                        console.error(
+                            "Service Worker登録失敗",
+                            error
+                        );
+
+                    }
+                );
+
+        }
+
+    );
+
+}
+
+</script>
+
+
+</body>
+
+</html>
